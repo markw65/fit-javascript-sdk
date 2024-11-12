@@ -547,6 +547,11 @@ class Decoder {
 
             for (let j = 0; j < field.components.length; j++) {
                 const targetField = fields[field.components[j]];
+                if (bitStream.bitsAvailable < field.bits[j]) {
+                    break;
+                }
+
+                let value = bitStream.readBits(field.bits[j]);
                 if (mesg[targetField.name] == null) {
                     const baseType = FIT.FieldTypeToBaseType[targetField.type];
                     const invalidValue = baseType != null ? FIT.BaseTypeDefinitions[baseType].invalid : 0xFF;
@@ -558,13 +563,11 @@ class Decoder {
                         isExpandedField: true,
                         invalidValue,
                     };
-                }
 
-                if (bitStream.bitsAvailable < field.bits[j]) {
-                    break;
+                    if (targetField.isAccumulated) {
+                        this.#accumulator.add(mesgNum, targetField.num, value)
+                    }
                 }
-
-                let value = bitStream.readBits(field.bits[j]);
 
                 value = this.#accumulator.accumulate(mesgNum, targetField.num, value, field.bits[j]) ?? value;
 

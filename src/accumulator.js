@@ -36,8 +36,9 @@ class Accumulator {
         if (this.#messages[mesgNum] == null) {
             this.#messages[mesgNum] = {};
         }
-
-        this.#messages[mesgNum][fieldNum] = new AccumulatedField(value);
+        if (this.#messages[mesgNum][fieldNum] == null) {
+            this.#messages[mesgNum][fieldNum] = new AccumulatedField(value);
+        }
     }
 
     accumulate(mesgNum, fieldNum, value, bits) {
