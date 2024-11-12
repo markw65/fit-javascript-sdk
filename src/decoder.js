@@ -530,7 +530,7 @@ class Decoder {
         while (this.#fieldsToExpand.length > 0) {
             const name = this.#fieldsToExpand.shift();
 
-            const { rawFieldValue, fieldDefinitionNumber, isSubField } = message[name];
+            const { rawFieldValue, fieldDefinitionNumber, isSubField } = message[name] ?? mesg[name];
             let field = Profile.messages[mesgNum].fields[fieldDefinitionNumber];
             field = isSubField ? this.#lookupSubfield(field, name) : field;
             const baseType = FIT.FieldTypeToBaseType[field.type];
@@ -568,13 +568,18 @@ class Decoder {
 
                 value = this.#accumulator.accumulate(mesgNum, targetField.num, value, field.bits[j]) ?? value;
 
-                mesg[targetField.name].rawFieldValue.push(value);
+                const rfv = mesg[targetField.name].rawFieldValue;
 
                 if (value === mesg[targetField.name].invalidValue) {
+                    rfv.push(value);
                     mesg[targetField.name].fieldValue.push(null);
                 }
                 else {
                     value = value / field.scale[j] - field.offset[j];
+
+                    const offset = Array.isArray(targetField.offset) ? targetField.offset[rfv.length]: targetField.offset;
+                    const scale = Array.isArray(targetField.scale) ? targetField.scale[rfv.length]: targetField.scale;
+                    rfv.push(Math.round((value + offset) * scale));
 
                     if (this.#optConvertTypesToStrings) {
                         value = this.#convertTypeToString(mesg, targetField, value);
